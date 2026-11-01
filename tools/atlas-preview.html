@@ -1,0 +1,9 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Atlas preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;700;800&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#111}canvas{width:100%;display:block}</style></head>
+<body><div id="s" style="color:#fff;font:14px sans-serif">painting</div><script type="module">
+import { paintAtlas } from "../src/render/atlas.ts";
+await document.fonts.load('20px "IM Fell English SC"'); await document.fonts.load('italic 20px "IM Fell English"');
+const t0=performance.now(); const c=await paintAtlas(2,(f,l)=>document.getElementById('s').textContent=l);
+document.getElementById('s').textContent='done '+Math.round(performance.now()-t0)+'ms'; document.body.appendChild(c); window.DONE=true;
+</script></body></html>

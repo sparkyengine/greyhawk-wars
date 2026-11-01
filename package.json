@@ -1,0 +1,20 @@
+{
+  "name": "greyhawk-wars",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A local pass-and-play digital edition of the 1991 Greyhawk Wars board game.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "node tests/e2e.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.8"
+  }
+}

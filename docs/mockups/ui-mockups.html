@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Greyhawk Wars Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a night-lit war room. Dark slate table, one lit vellum map, brass for the single thing to do next. */
+:root{
+  --table:#0e131a; --panel:#161e28; --panel2:#1e2834; --line:#2d3947;
+  --text:#ebe4d2; --muted:#98a3af; --brass:#d6a74b; --vellum:#e4d8b4; --ink:#2b2217;
+  --good:#5a98ea; --evil:#e0675b; --neutral:#a8a89c; --ok:#6fbf8a; --warn:#e0a13c;
+  --display:'IM Fell English SC',Georgia,'Times New Roman',serif;
+  --body:'Alegreya Sans','Segoe UI',system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--table);color:var(--text);font:400 15px/1.4 var(--body)}
+h1,h2,h3,h4,p{margin:0}
+h2,h3{text-wrap:balance}
+button{font:inherit;color:inherit}
+[hidden]{display:none!important}
+a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+#app{height:100%;display:flex;flex-direction:column}
+.top{flex:none;height:54px;display:flex;align-items:center;gap:18px;padding:0 18px;border-bottom:1px solid var(--line);background:linear-gradient(#151d27,#10161d)}
+.brand{display:flex;align-items:center;gap:10px;font:400 23px var(--display);letter-spacing:.04em;color:var(--brass);white-space:nowrap}
+.brand em{font-style:normal;color:var(--text)}
+#tabs{display:flex;gap:4px;overflow-x:auto}
+#tabs a{padding:9px 14px;border-radius:6px;color:var(--muted);text-decoration:none;font-weight:500;font-size:14px;white-space:nowrap}
+#tabs a:hover{color:var(--text)}
+#tabs a.on{background:var(--panel2);color:var(--text);box-shadow:inset 0 -2px 0 var(--brass)}
+.tag{margin-left:auto;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.viewport{flex:1;min-height:0;overflow:auto}
+.view{display:none;height:100%}
+.view.on{display:block}
+.stage{min-width:1120px;min-height:700px;height:100%}
+
+.eyebrow{font:500 11.5px var(--body);letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.btn{font-weight:500;font-size:14px;padding:8px 12px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);cursor:pointer}
+.btn:hover:not([disabled]){border-color:#4a5b6e;background:#25313f}
+.btn.primary{background:var(--brass);color:#1b1406;border-color:#b78a35;font-weight:700}
+.btn.primary:hover:not([disabled]){background:#e2b55a}
+.btn.danger{color:#f0a49b;border-color:#5a2f2c}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:99px;border:1px solid var(--line);background:var(--panel2);font-size:12.5px;color:var(--muted)}
+.chip.ok{color:var(--ok);border-color:#2f5a42}
+.chip.bad{color:#f0a49b;border-color:#5a2f2c}
+.chip.brass{color:var(--brass);border-color:#6b5222}
+.rule{color:var(--brass);text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer;background:none;border:0;padding:0;font-size:inherit}
+svg.g{width:1em;height:1em;vertical-align:-.12em;fill:currentColor}
+.al-G{color:var(--good)} .al-E{color:var(--evil)} .al-N{color:var(--neutral)}
+
+/* counters */
+.ctr{position:relative;display:inline-grid;place-items:center;width:38px;height:44px;border-radius:6px;border:1px solid rgba(255,255,255,.28);color:#fff;font-family:var(--body);line-height:1}
+.ctr b{font-size:21px;font-weight:700}
+.ctr i{position:absolute;bottom:3px;left:0;right:0;text-align:center;font:700 9.5px var(--body);font-style:normal;letter-spacing:.06em;opacity:.85}
+.ctr svg{position:absolute;top:3px;left:3px;width:9px;height:9px;fill:#fff;opacity:.8}
+.ctr.G{background:#2f5d49}.ctr.E{background:#7c2c2a}.ctr.N{background:#5a5c57}
+.ctr.dmg{outline:2px dashed var(--warn);outline-offset:1px}
+.ctr.dmg::after{content:"hurt";position:absolute;top:-8px;right:-4px;background:var(--warn);color:#241a05;font:700 9px var(--body);padding:0 4px;border-radius:3px}
+
+/* ================= TABLE ================= */
+.table-stage{display:grid;grid-template-columns:272px 1fr 360px;grid-template-rows:auto 1fr;min-height:0}
+.ribbon{grid-column:1/4;display:flex;align-items:center;gap:22px;padding:8px 16px;border-bottom:1px solid var(--line);background:#121922}
+.turnbox{display:flex;flex-direction:column;line-height:1.1}
+.turnbox b{font:400 26px var(--display);color:var(--text)}
+.phases{display:flex;gap:0;list-style:none;margin:0;padding:0}
+.phases li{position:relative;padding:7px 20px 7px 26px;font-size:13.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);margin-right:-1px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%)}
+.phases li:first-child{clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%);padding-left:16px}
+.phases li b{font:400 15px var(--display);margin-right:6px}
+.phases li.done{color:var(--ok)}
+.phases li.cur{background:var(--brass);color:#1b1406;font-weight:700}
+.subs{display:flex;gap:6px;list-style:none;margin:0;padding:0;font-size:12.5px}
+.subs li{padding:3px 9px;border-radius:5px;border:1px solid var(--line);color:var(--muted)}
+.subs li.cur{border-color:var(--brass);color:var(--brass);background:rgba(214,167,75,.1)}
+.subs li b{margin-right:4px}
+.order{display:flex;align-items:center;gap:8px;margin-left:auto}
+.seal{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;font:400 15px var(--display);color:#fff;border:2px solid rgba(255,255,255,.35)}
+.oc{display:flex;align-items:center;gap:7px;padding:3px 10px 3px 4px;border-radius:99px;border:1px solid var(--line);font-size:13px}
+.oc.on{border-color:var(--brass);background:rgba(214,167,75,.1)}
+.oc small{color:var(--muted)}
+
+.left,.right{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;background:#111820}
+.left{border-right:1px solid var(--line)}
+.right{border-left:1px solid var(--line)}
+.vic{display:flex;flex-direction:column;gap:9px;margin-top:8px}
+.vic .row{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:13.5px}
+.vic .row .st{display:block;color:var(--muted);font-size:12.5px}
+.bar{height:7px;border-radius:5px;background:#0d1218;border:1px solid var(--line);overflow:hidden;margin-top:5px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#8c6a26,var(--brass))}
+.plist{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.pl{display:grid;grid-template-columns:34px 1fr;gap:9px;align-items:center}
+.pl .nm{font-weight:700;font-size:14.5px}
+.pl .sub{font-size:12.5px;color:var(--muted)}
+.log{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.log li b{color:var(--text);font-weight:500}
+.log li{padding-left:10px;border-left:2px solid var(--line)}
+
+.mapwrap{position:relative;background:#0b1015;overflow:hidden;min-height:0}
+#map{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#map.drag{cursor:grabbing}
+.maptools{position:absolute;top:12px;left:12px;display:flex;flex-direction:column;gap:6px;background:rgba(22,30,40,.92);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px}
+.maptools label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:4px}
+.zoom .btn{width:34px;height:34px;padding:0;font-size:18px}
+.legend{position:absolute;left:50%;transform:translateX(-50%);top:12px;background:rgba(22,30,40,.92);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:12.5px;display:flex;flex-direction:column;gap:4px}
+.legend span{display:flex;align-items:center;gap:7px}
+.sw{width:16px;height:10px;border-radius:2px;display:inline-block}
+.pop{position:absolute;z-index:5;max-width:300px;background:#1b2531;border:1px solid var(--brass);border-radius:9px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:13.5px}
+.pop h4{font:400 16px var(--display);color:var(--brass);margin-bottom:4px}
+.pop .x{display:flex;gap:10px;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.hand{position:absolute;left:50%;bottom:-46px;transform:translateX(-50%);display:flex;gap:0;padding:0 16px;transition:bottom .2s}
+.hand:hover,.hand:focus-within{bottom:-6px}
+.hcard{width:128px;height:176px;margin:0 -8px;border-radius:9px;border:2px solid #5a4a28;background:linear-gradient(#e9dcb7,#d6c697);color:var(--ink);padding:8px 9px;display:flex;flex-direction:column;gap:4px;transform:translateY(0) rotate(var(--r));transform-origin:50% 140%;cursor:pointer;transition:transform .15s;text-align:left;font-size:11.5px;line-height:1.25}
+.hcard:hover{transform:translateY(-26px) rotate(0)}
+.hcard .k{font:700 9.5px var(--body);letter-spacing:.12em;text-transform:uppercase;opacity:.7}
+.hcard .t{font:400 14px/1.1 var(--display)}
+.hcard .pl8{margin-top:auto;font-weight:700;font-size:11px;color:#6a4a10}
+.hcard.ev{border-color:#7a5a2a}.hcard.tr{border-color:#2f5d7a}.hcard.me{border-color:#6a2f2a}
+.handlabel{position:absolute;left:50%;bottom:136px;transform:translateX(-50%);font-size:12px;color:var(--muted);background:rgba(22,30,40,.9);border:1px solid var(--line);padding:2px 10px;border-radius:99px;pointer-events:none}
+
+.coach h2{font:400 24px/1.1 var(--display);margin:4px 0 6px}
+.coach .lead{color:#c9c2b0;font-size:14px}
+.army-rows{display:flex;flex-direction:column;gap:4px;margin-top:9px}
+.arow{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:7px;border:1px solid transparent;background:var(--panel2);cursor:pointer;font-size:13.5px;text-align:left;width:100%}
+.arow:hover{border-color:#4a5b6e}
+.arow.on{border-color:var(--brass);background:rgba(214,167,75,.1)}
+.arow .s{margin-left:auto;font-size:12px;color:var(--muted)}
+.arow.done{opacity:.6}
+.units{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:13.5px;margin-top:6px}
+.facts dt{color:var(--muted)} .facts dd{margin:0}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+.act{display:flex;flex-direction:column;gap:2px;text-align:left;padding:8px 10px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);cursor:pointer}
+.act b{font-weight:700;font-size:14px}
+.act span{font-size:12px;color:var(--muted);line-height:1.25}
+.act[disabled]{cursor:not-allowed;opacity:.55}
+.act[disabled] span{color:#c98d86}
+.act:hover:not([disabled]){border-color:var(--brass)}
+.plan{margin-top:10px;border:1px solid var(--brass);background:rgba(214,167,75,.08);border-radius:9px;padding:10px 12px}
+.plan h3{font:400 18px var(--display);color:var(--brass)}
+.plan ul{margin:6px 0 8px;padding-left:18px;font-size:13.5px}
+.quote{font-size:13.5px;color:#c9c2b0;border-left:3px solid var(--brass);padding-left:10px;margin-top:6px}
+
+/* ================= BATTLE ================= */
+.battle-stage{display:grid;grid-template-columns:290px 1fr 330px;height:100%}
+.bcol{padding:14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;background:#111820}
+.bcol.l{border-right:1px solid var(--line)}.bcol.r{border-left:1px solid var(--line)}
+.arena{display:flex;flex-direction:column;min-height:0;background:radial-gradient(ellipse at 50% 45%,#233042 0%,#0f151c 70%)}
+.bhead{padding:12px 20px 0;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.bhead h1{font:400 30px/1 var(--display)}
+.bhead .chips{display:flex;gap:6px;flex-wrap:wrap}
+#arena{flex:1;min-height:0;width:100%}
+.bar2{display:flex;gap:10px;align-items:center;padding:12px 20px;border-top:1px solid var(--line);background:#101820}
+.bar2 .msg{flex:1;font-size:14.5px}
+.steps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:26px 1fr;gap:8px;padding:7px 8px;border-radius:7px;border:1px solid transparent;font-size:13.5px;color:var(--muted)}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);font:400 12px var(--display)}
+.steps li.done{color:var(--ok)}
+.steps li.done::before{content:"✓";border-color:#2f5a42}
+.steps li.cur{color:var(--text);border-color:var(--brass);background:rgba(214,167,75,.09)}
+.steps li.cur::before{background:var(--brass);color:#1b1406;border-color:var(--brass)}
+.steps small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.mods{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.mods li{display:grid;grid-template-columns:22px 1fr;gap:8px}
+.mods .m{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700}
+.mods .on .m{background:var(--ok);color:#0b1a11}
+.mods .off{color:var(--muted)}
+.mods .off .m{border:1px solid var(--line)}
+.mods small{display:block;color:var(--muted);font-size:12px}
+.dlog{list-style:none;margin:8px 0 0;padding:0;font-size:13px;display:flex;flex-direction:column;gap:5px}
+.dlog li{padding-left:9px;border-left:2px solid var(--line);color:#c9c2b0}
+.dlog li.hit{border-color:var(--evil)} .dlog li.hitg{border-color:var(--good)}
+#arena text{font-family:var(--body)}
+#arena .bn{font:700 11.5px var(--body);fill:#fff;letter-spacing:.02em}
+#arena .bs{font:700 50px var(--body);fill:#fff}
+#arena .gone{opacity:.22}
+.cardchip{display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:8px;background:#e1d4ae;color:var(--ink);font-size:13px}
+.cardchip b{font:400 15px var(--display)}
+
+/* ================= DIPLOMACY ================= */
+.dip-stage{display:grid;grid-template-columns:minmax(360px,420px) 1fr;gap:28px;padding:26px 34px;height:100%;overflow:auto;align-content:start;background:radial-gradient(ellipse at 25% 20%,#223043 0%,#0e131a 65%)}
+.ccard{align-self:start;background:linear-gradient(#ebdfba,#d9c99a);color:var(--ink);border:3px solid #6a5226;border-radius:14px;padding:18px 20px 20px;box-shadow:0 18px 40px rgba(0,0,0,.5);position:relative}
+.ccard .rt{position:absolute;top:14px;width:52px;height:52px;display:grid;place-items:center;border:2px solid #4a3a1a;background:#f3ead0;font:700 30px var(--body)}
+.ccard .rt small{position:absolute;bottom:-17px;left:-8px;right:-8px;text-align:center;font:700 9.5px var(--body);letter-spacing:.1em;text-transform:uppercase;color:#4a3a1a}
+.ccard .rt.g{left:14px}.ccard .rt.e{right:14px}
+.ccard h2{font:400 30px/1.05 var(--display);text-align:center;margin:62px 0 6px}
+.ccard hr{border:0;border-top:1px solid #8a7440;margin:12px 0}
+.ccard .mod{font-size:14px;text-align:center}
+.ccard .ro{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:14px}
+.calc h1{font:400 34px/1.05 var(--display);margin:4px 0 6px}
+.checks{display:flex;flex-direction:column;gap:6px;margin:12px 0 18px;font-size:14px}
+.checks div{display:flex;gap:9px;align-items:center}
+.checks .m{width:20px;height:20px;border-radius:50%;background:var(--ok);color:#0b1a11;display:grid;place-items:center;font-size:12px;font-weight:700}
+.sum{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.sum .ln{display:grid;grid-template-columns:1fr auto;gap:12px;padding:9px 14px;border-bottom:1px solid var(--line);align-items:center;font-size:14.5px}
+.sum .ln small{display:block;color:var(--muted);font-size:12.5px}
+.sum .ln .v{font:700 22px var(--body);min-width:44px;text-align:right}
+.sum .ln .v.p{color:var(--ok)}.sum .ln .v.n{color:#f0a49b}
+.sum .tot{background:var(--panel2);border-bottom:0}
+.sum .tot .v{font-size:34px;color:var(--brass)}
+.tog{display:flex;align-items:center;gap:9px;cursor:pointer}
+.tog input{width:18px;height:18px;accent-color:var(--brass)}
+.line10{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:16px 0 8px}
+.line10 div{height:48px;border-radius:7px;border:1px solid var(--line);display:grid;place-items:center;font:700 20px var(--body);background:var(--panel);color:var(--muted);position:relative}
+.line10 div.yes{background:rgba(111,191,138,.18);border-color:#2f5a42;color:var(--ok)}
+.line10 div.hit{outline:3px solid var(--brass);outline-offset:2px;color:var(--text)}
+.result{margin-top:12px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);min-height:76px}
+.result.win{border-color:#2f5a42;background:rgba(111,191,138,.1)}
+.result.lose{border-color:#5a2f2c;background:rgba(224,103,91,.08)}
+
+/* ================= RULEBOOK ================= */
+.rb-stage{display:grid;grid-template-columns:270px 1fr 300px;height:100%}
+.toc{padding:14px;overflow-y:auto;border-right:1px solid var(--line);background:#111820;display:flex;flex-direction:column;gap:12px}
+.search{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:#0d1218;color:var(--text);font:inherit}
+.toc h4{font:500 11.5px var(--body);letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:6px 0 4px}
+.toc button{display:flex;width:100%;justify-content:space-between;gap:8px;text-align:left;padding:6px 9px;border-radius:6px;border:0;background:none;color:#c9c2b0;font-size:14px;cursor:pointer}
+.toc button:hover{background:var(--panel2)}
+.toc button.on{background:rgba(214,167,75,.12);color:var(--brass);font-weight:700}
+.toc button[disabled]{opacity:.4;cursor:default}
+.toc button small{color:var(--muted)}
+.page{overflow-y:auto;padding:26px 44px 40px;background:radial-gradient(ellipse at 30% 0%,#202c3b 0%,#0e131a 60%)}
+.page .crumb{font-size:13px;color:var(--muted)}
+.page h1{font:400 44px/1.02 var(--display);margin:6px 0 6px}
+.page .ptabs{display:flex;gap:4px;margin:16px 0}
+.page .ptabs button{padding:7px 14px;border-radius:6px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:14px;color:var(--muted)}
+.page .ptabs button.on{background:var(--panel2);color:var(--text);border-color:var(--brass)}
+.prose{max-width:66ch}
+.prose p{margin:0 0 10px;font-size:16px;line-height:1.5}
+.prose ul{padding-left:20px;margin:0 0 12px}
+.prose li{margin-bottom:5px;font-size:15.5px;line-height:1.45}
+.prose h3{font:400 22px var(--display);margin:20px 0 6px;color:var(--brass)}
+.callout{border:1px solid var(--line);border-left:4px solid var(--brass);background:var(--panel);border-radius:8px;padding:10px 14px;margin:12px 0;max-width:66ch;font-size:14.5px}
+.speed{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:66ch;margin:12px 0}
+.speed div{padding:10px 12px;border-radius:9px;background:var(--panel);border:1px solid var(--line);text-align:center}
+.speed b{display:block;font:700 34px var(--body);color:var(--brass);line-height:1}
+.speed span{font-size:13px;color:var(--muted)}
+.sandbox{max-width:760px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:16px 0}
+.sandbox .ctl{display:flex;gap:8px;align-items:center;margin:8px 0 12px;flex-wrap:wrap}
+.chain{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.tile{border-radius:8px;border:1px solid rgba(0,0,0,.35);padding:8px 4px 6px;text-align:center;font-size:12.5px;color:var(--ink);min-height:92px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;opacity:.45;transition:opacity .2s}
+.tile.ok{opacity:1;box-shadow:0 0 0 2px var(--brass)}
+.tile b{font:400 15px var(--display)}
+.tile .pips{display:flex;gap:3px}
+.tile .pips i{width:8px;height:8px;border-radius:50%;background:#2b2217}
+.tile .pips i.o{background:transparent;border:1px solid #2b2217}
+.tile small{font-size:11.5px;line-height:1.15}
+.side{padding:16px;overflow-y:auto;border-left:1px solid var(--line);background:#111820;display:flex;flex-direction:column;gap:14px}
+.side dl{margin:6px 0 0;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.side dt{font-weight:700}.side dd{margin:0;color:#c9c2b0}
+.side .rel{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.side .rel button{background:var(--panel2);border:1px solid var(--line);padding:7px 10px;border-radius:7px;text-align:left;cursor:pointer;font-size:13.5px}
+.side .rel button:hover{border-color:var(--brass)}
+.faq summary{cursor:pointer;font-weight:500;font-size:14px;padding:5px 0}
+.faq p{font-size:13.5px;color:#c9c2b0;padding:0 0 6px}
+
+/* ================= HANDOFF ================= */
+.hand-stage{display:grid;place-items:center;height:100%;padding:24px;background:radial-gradient(ellipse at 50% 30%,#2a3748 0%,#0b1016 70%)}
+.curtain{width:min(640px,100%);text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+.bigseal{width:116px;height:116px;border-radius:50%;display:grid;place-items:center;font:400 58px var(--display);color:#fff;background:#9b2335;border:4px solid #e7c58a;box-shadow:0 0 0 8px rgba(231,197,138,.14),0 20px 40px rgba(0,0,0,.5)}
+.curtain h1{font:400 44px/1.05 var(--display)}
+.curtain .lead{color:#c9c2b0;max-width:48ch;font-size:16px}
+.curtain .btn{padding:13px 22px;font-size:16px}
+.revealed{display:flex;justify-content:center;gap:12px;margin-top:6px}
+.revealed .hcard{margin:0;transform:none;cursor:default;width:150px;height:208px;font-size:12.5px}
+.revealed .hcard:hover{transform:translateY(-4px)}
+.opts{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:8px;font-size:13.5px;color:var(--muted)}
+.opts label{display:flex;gap:7px;align-items:center;cursor:pointer}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-G" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.2"/><path d="M8 0.8v2.6M8 12.6v2.6M0.8 8h2.6M12.6 8h2.6M2.9 2.9l1.8 1.8M11.3 11.3l1.8 1.8M13.1 2.9l-1.8 1.8M4.7 11.3l-1.8 1.8" stroke="currentColor" stroke-width="1.4" fill="none"/></symbol>
+    <symbol id="i-E" viewBox="0 0 16 16"><path d="M8 0.5l2.1 5.4 5.4 2.1-5.4 2.1L8 15.5l-2.1-5.4L0.5 8l5.4-2.1z"/></symbol>
+    <symbol id="i-N" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2.2"/></symbol>
+    <symbol id="i-castle" viewBox="0 0 16 16"><path d="M1 15V5h2.4v2h1.6V5h2v2h2V5h2v2h1.6V5H15v10H10v-4a2 2 0 0 0-4 0v4z"/></symbol>
+  </defs>
+</svg>
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path d="M15 2l11 4v9c0 6-5 10.5-11 13C9 25.500 4 21 4 15V6z" fill="#7c2c2a" stroke="#d6a74b" stroke-width="1.6"/><path d="M9 20V12h2v1.500h1.500V12h2v1.500h1.500V12h2v8z" fill="#d6a74b"/></svg>
+      <span>Greyhawk <em>Wars</em></span>
+    </div>
+    <nav id="tabs" aria-label="Screens">
+      <a href="#table">Table</a><a href="#battle">Battle</a><a href="#diplomacy">Diplomacy</a><a href="#rulebook">Rulebook</a><a href="#handoff">Pass the device</a>
+    </nav>
+    <span class="tag">UI mockup. Map and art are placeholders.</span>
+  </header>
+  <div class="viewport">
+
+  <!-- ===================== TABLE ===================== -->
+  <section class="view" id="v-table"><div class="stage table-stage">
+    <div class="ribbon">
+      <div class="turnbox"><span class="eyebrow">Great War</span><b>Turn 3</b><span style="font-size:12.5px;color:var(--muted)">584 CY</span></div>
+      <ol class="phases" aria-label="Phases of the turn">
+        <li class="done"><b>1</b>Turn order</li><li class="done"><b>2</b>Place heroes</li><li class="done"><b>3</b>Event card</li><li class="cur" aria-current="step"><b>4</b>Action phase</li>
+      </ol>
+      <ol class="subs" aria-label="Action phase steps">
+        <li class="cur"><b>A</b>Act</li><li><b>B</b>Heal</li><li><b>C</b>Raise</li><li><b>D</b>Allies</li><li><b>E</b>Next player</li>
+      </ol>
+      <div class="order">
+        <span class="eyebrow">Order</span>
+        <span class="oc on"><span class="seal" style="background:#2f6fd0">A</span>Aldric <small>rolled 8</small></span>
+        <span class="oc"><span class="seal" style="background:#9b2335">B</span>Brenna <small>rolled 4</small></span>
+        <button class="btn" id="undo" title="Replays the game without your last answer">Undo</button>
+      </div>
+    </div>
+
+    <aside class="left" aria-label="Scenario and players">
+      <div class="panel">
+        <div class="eyebrow">Scenario</div>
+        <h3 style="font:400 20px var(--display);margin-top:3px">Furyondy Frontier</h3>
+        <div style="font-size:13px;color:var(--muted)">2 players. West map only.</div>
+        <div class="vic">
+          <div class="row"><svg class="g al-G" style="width:18px;height:18px"><use href="#i-G"/></svg><div>Good wins: hold <b>Dorakaa</b> at the end of any turn.<span class="st">Not held. 2 areas from Fairwain through Crockport, and Iuz's host defends it.</span></div></div>
+          <div class="row"><svg class="g al-E" style="width:18px;height:18px"><use href="#i-E"/></svg><div>Evil wins: hold <b>Chendl</b> at the end of any turn.<span class="st">Held by Aldric. 5 units stand there.</span></div></div>
+          <div class="row"><svg class="g al-N" style="width:18px;height:18px"><use href="#i-N"/></svg><div>Otherwise the game ends when light infantry run out in a recruit step.<span class="st">22 of 45 left. Losses are permanent here.</span><div class="bar"><i style="width:49%"></i></div></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Players</div>
+        <div class="plist">
+          <div class="pl"><span class="seal" style="background:#2f6fd0;width:34px;height:34px">A</span><div><div class="nm">Aldric <svg class="g al-G"><use href="#i-G"/></svg></div><div class="sub">Furyondy, Shield Lands. 4 armies, 3 heroes, 3 cards.</div></div></div>
+          <div class="pl"><span class="seal" style="background:#9b2335;width:34px;height:34px">B</span><div><div class="nm">Brenna <svg class="g al-E"><use href="#i-E"/></svg></div><div class="sub">Iuz, Horned Society. 4 armies, 3 heroes, 2 cards.</div></div></div>
+        </div>
+      </div>
+      <div class="panel" style="flex:1;min-height:150px">
+        <div class="eyebrow">What just happened</div>
+        <ul class="log" id="log"></ul>
+      </div>
+    </aside>
+
+    <div class="mapwrap" id="mapwrap">
+      <svg id="map" role="img" aria-label="Map of the Furyondy frontier"></svg>
+      <div class="maptools">
+        <span class="eyebrow">Layers</span>
+        <label for="l-reach"><input type="checkbox" id="l-reach" checked>Where this army can go</label>
+        <label for="l-terr"><input type="checkbox" id="l-terr" checked>Terrain pictures</label>
+        <label for="l-lab"><input type="checkbox" id="l-lab" checked>Area names</label>
+      </div>
+      <div class="zoom"><button class="btn" id="zin" aria-label="Zoom in">+</button><button class="btn" id="zout" aria-label="Zoom out">&minus;</button><button class="btn" id="zfit" aria-label="Fit map" style="font-size:12px">fit</button></div>
+      <div class="legend" aria-label="Legend">
+        <span><i class="sw" style="background:#5a98ea"></i><svg class="g al-G"><use href="#i-G"/></svg>Good border</span>
+        <span><i class="sw" style="background:#e0675b"></i><svg class="g al-E"><use href="#i-E"/></svg>Evil border</span>
+        <span><i class="sw" style="background:#6aa6d4;height:4px"></i>River (crossing: defender strikes first)</span>
+        <span><svg class="g" style="color:#ffd35c"><use href="#i-N"/></svg>Treasure site &nbsp;<b style="color:#ffd35c">&#10013;</b> Mercenaries</span>
+      </div>
+      <div class="handlabel">Your hand, 3 cards. Hover to look.</div>
+      <div class="hand" id="hand"></div>
+    </div>
+
+    <aside class="right coach" id="coach" aria-label="Turn coach"></aside>
+  </div></section>
+
+  <!-- ===================== BATTLE ===================== -->
+  <section class="view" id="v-battle"><div class="stage battle-stage">
+    <div class="bcol l">
+      <div><div class="eyebrow">Order of resolution</div>
+        <ol class="steps" id="bsteps"></ol></div>
+    </div>
+    <div class="arena">
+      <div class="bhead">
+        <div><div class="eyebrow">Aldric attacks from Fairwain across the Veng River</div><h1>Battle of Vesve Forest</h1></div>
+        <div class="chips"><span class="chip brass">Round <b id="rnd">1</b> of up to 4</span><span class="chip ok">Hero present: 4 rounds allowed</span></div>
+      </div>
+      <svg id="arena" viewBox="30 0 940 500" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Battle lines"></svg>
+      <div class="bar2"><div class="msg" id="bmsg"></div><button class="btn" id="bretreat" hidden>Retreat to Fairwain</button><button class="btn primary" id="bgo">Roll defenders' dice</button></div>
+    </div>
+    <div class="bcol r">
+      <div><div class="eyebrow">What changes the dice</div>
+        <ul class="mods">
+          <li class="on"><span class="m">&#10003;</span><div><b>River crossing</b><small>Defender attacks first. Attacker removes his hits first.</small></div></li>
+          <li class="on"><span class="m">&#10003;</span><div><b>Hero with the attackers</b><small>Sir Corwin joins the Heavy Infantry: strength +1. He cannot be hurt.</small></div></li>
+          <li class="off"><span class="m"></span><div><b>Fortification: attackers &minus;1</b><small>Vesve Forest has none.</small></div></li>
+          <li class="off"><span class="m"></span><div><b>Favored terrain: +1</b><small>No unit here is a forest race.</small></div></li>
+        </ul></div>
+      <div><div class="eyebrow">Cards you can play</div>
+        <div class="cardchip" style="margin-top:8px"><div><b>Wand of Fear</b><br>&minus;1 to one enemy unit for the battle. Play before dice are rolled.</div></div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:6px">Brenna holds 2 cards. Cards are laid face down, attacker first, then flipped together.</div></div>
+      <div><div class="eyebrow">Dice log</div><ul class="dlog" id="dlog"></ul></div>
+    </div>
+  </div></section>
+
+  <!-- ===================== DIPLOMACY ===================== -->
+  <section class="view" id="v-diplomacy"><div class="stage dip-stage">
+    <article class="ccard" aria-label="Country card: March of Bissel">
+      <div class="rt g">5<small>Good</small></div><div class="rt e">3<small>Evil</small></div>
+      <h2>March of Bissel</h2>
+      <hr>
+      <p class="mod"><b>+1</b> if you control Furyondy</p>
+      <hr>
+      <div class="ro"><span class="ctr G"><svg><use href="#i-G"/></svg><b>3</b><i>MC</i></span><span class="ctr G"><svg><use href="#i-G"/></svg><b>4</b><i>MI</i></span><span class="ctr G"><svg><use href="#i-G"/></svg><b>3</b><i>LI</i></span><span class="ctr G"><svg><use href="#i-G"/></svg><b>3</b><i>SCT</i></span></div>
+      <p style="text-align:center;font-size:12.5px;margin-top:10px;opacity:.75">Roster raised when Bissel allies: 1 MC, 1 MI, 1 LI, 1 Scout</p>
+    </article>
+    <div class="calc">
+      <div class="eyebrow">Diplomacy attempt</div>
+      <h1>Win over Bissel</h1>
+      <div class="checks">
+        <div><span class="m">&#10003;</span>Sir Corwin stands in Thornward, Bissel's capital.</div>
+        <div><span class="m">&#10003;</span>No other player's army is in Thornward.</div>
+        <div><span class="m">&#10003;</span>Sir Corwin has not acted this turn. The attempt will flip him.</div>
+      </div>
+      <div class="sum" id="dsum"></div>
+      <div class="line10" id="line10" aria-label="Roll scale"></div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <button class="btn primary" id="droll" style="padding:12px 22px;font-size:16px">Roll the d10</button>
+        <span id="dchance" style="color:var(--muted);font-size:14px"></span>
+        <button class="rule" data-rule="diplomacy" style="margin-left:auto">How diplomacy works, rulebook p.6&ndash;7</button>
+      </div>
+      <div class="result" id="dres">Roll equal to or under the target to win the alliance.</div>
+    </div>
+  </div></section>
+
+  <!-- ===================== RULEBOOK ===================== -->
+  <section class="view" id="v-rulebook"><div class="stage rb-stage">
+    <nav class="toc" aria-label="Rulebook contents">
+      <input class="search" id="rsearch" type="search" placeholder="Search rules, cards, terms" aria-label="Search rules">
+      <div id="toc"></div>
+    </nav>
+    <main class="page" id="rpage"></main>
+    <aside class="side" id="rside"></aside>
+  </div></section>
+
+  <!-- ===================== HANDOFF ===================== -->
+  <section class="view" id="v-handoff"><div class="stage hand-stage">
+    <div class="curtain">
+      <span class="eyebrow">Turn 3, Phase 3: Event card</span>
+      <div class="bigseal">B</div>
+      <h1>Pass the keyboard to Brenna</h1>
+      <p class="lead">Aldric, look away. The next screen shows Brenna's hand and her event card. Nothing private is on screen right now.</p>
+      <div id="hcurtain"><button class="btn primary" id="hshow">I'm Brenna. Show my cards</button></div>
+      <div class="revealed" id="hrev" hidden></div>
+      <button class="btn" id="hhide" hidden>Hide cards and pass back</button>
+      <div class="opts">
+        <label for="o-blur"><input type="checkbox" id="o-blur" checked>Hide cards if the window loses focus</label>
+        <label for="o-hold"><input type="checkbox" id="o-hold">Hold to peek instead of click</label>
+        <label for="o-qr"><input type="checkbox" id="o-qr">Show hand on my phone instead (QR)</label>
+      </div>
+    </div>
+  </div></section>
+
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const NS='http://www.w3.org/2000/svg';
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ic=(k,c)=>`<svg class="g ${c||''}"><use href="#i-${k}"/></svg>`;
+
+/* ---------------- routing ---------------- */
+const VIEWS=['table','battle','diplomacy','rulebook','handoff'];
+function route(){
+  const h=(location.hash||'#table').slice(1); const v=VIEWS.includes(h)?h:'table';
+  $$('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
+  $$('#tabs a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+v));
+}
+addEventListener('hashchange',route); route();
+function go(v){ location.hash='#'+v; }
+
+/* ---------------- units ---------------- */
+const U={
+  HC:{n:'Heavy Cavalry',f:4,b:3,mv:4,al:'G',cav:1}, MC:{n:'Medium Cavalry',f:3,b:2,mv:4,al:'G',cav:1},
+  HI:{n:'Heavy Infantry',f:5,b:4,mv:3,al:'G',inf:1}, MI:{n:'Medium Infantry',f:4,b:3,mv:3,al:'G',inf:1},
+  LI:{n:'Light Infantry',f:3,b:0,mv:3,al:'N',inf:1},
+  Orc:{n:'Orc',f:4,b:2,mv:3,al:'E',inf:1}, Hob:{n:'Hobgoblin',f:5,b:3,mv:3,al:'E',inf:1}, Gob:{n:'Goblin',f:2,b:0,mv:3,al:'E',inf:1}
+};
+const code={HC:'HC',MC:'MC',HI:'HI',MI:'MI',LI:'LI',Orc:'ORC',Hob:'HOB',Gob:'GOB'};
+function ctr(k,o){o=o||{};const u=U[k];const s=(o.hp===1&&u.b)?u.b:u.f;
+  return `<span class="ctr ${u.al}${o.hp===1&&u.b?' dmg':''}"><svg><use href="#i-${u.al}"/></svg><b>${s}</b><i>${code[k]}</i></span>`;}
+
+/* ---------------- map model ---------------- */
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const LAYOUT=[
+ ['fellreev','molag','howling','dorakaa','whyestil'],
+ ['bandit','vesve','fairwain','crockport','whyestil'],
+ ['critwall','admund','chendl','willip','mitrik'],
+ ['nyrdyv','nyrdyv','whitehale','thornward','lortmil']];
+const AREA={
+ fellreev:{n:'Fellreev Forest',t:'forest',c:'horned'}, molag:{n:'Molag',t:'clear',c:'horned',cap:1},
+ howling:{n:'Howling Hills',t:'hills',c:'iuz',magic:1}, dorakaa:{n:'Dorakaa',t:'clear',c:'iuz',cap:1},
+ whyestil:{n:'Whyestil Lake',t:'water'}, bandit:{n:'Bandit Kingdoms',t:'clear'},
+ vesve:{n:'Vesve Forest',t:'forest',c:'iuz'}, fairwain:{n:'Fairwain',t:'clear',c:'furyondy'},
+ crockport:{n:'Crockport',t:'clear',c:'furyondy',merc:1}, critwall:{n:'Critwall',t:'clear',c:'shield'},
+ admund:{n:'Admundfort',t:'clear',c:'shield',cap:1}, chendl:{n:'Chendl',t:'clear',c:'furyondy',cap:1},
+ willip:{n:'Willip',t:'clear',c:'furyondy'}, mitrik:{n:'Mitrik',t:'clear',c:'veluna',cap:1},
+ nyrdyv:{n:'Nyr Dyv',t:'water'}, whitehale:{n:'Whitehale Hills',t:'hills',c:'veluna'},
+ thornward:{n:'Thornward',t:'clear',c:'bissel',cap:1}, lortmil:{n:'Lortmil Mountains',t:'mountains',blocked:1}
+};
+const CT={furyondy:'G',shield:'G',veluna:'G',bissel:'G',iuz:'E',horned:'E'};
+const TFILL={clear:'#dcd2a6',forest:'#b3c18a',hills:'#dfc482',mountains:'#bba68c',water:'#86aec6'};
+const RIVERS=new Set(['v:2:1','h:1:2','h:0:2']);
+const rnd=mulberry(11);
+const V=[]; for(let i=0;i<=5;i++){V[i]=[];for(let j=0;j<=4;j++){
+  let x=38+i*184.8,y=38+j*141; const jx=rnd()*2-1,jy=rnd()*2-1; const ex=(i===0||i===5),ey=(j===0||j===4);
+  x+=ex?jx*6:jx*30; y+=ey?jy*6:jy*24; V[i][j]=[x,y]; }}
+const EDGES={};
+function edge(key,a,b){ if(!EDGES[key]){const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1;const o=(rnd()-.5)*26;
+  EDGES[key]={a,b,c:[mx-dy/l*o,my+dx/l*o]};} return EDGES[key]; }
+const CELLS=[];
+for(let r=0;r<4;r++)for(let c=0;c<5;c++){
+  const id=LAYOUT[r][c];
+  const top=edge(`h:${c}:${r}`,V[c][r],V[c+1][r]), bot=edge(`h:${c}:${r+1}`,V[c][r+1],V[c+1][r+1]);
+  const left=edge(`v:${c}:${r}`,V[c][r],V[c][r+1]), right=edge(`v:${c+1}:${r}`,V[c+1][r],V[c+1][r+1]);
+  const d=`M${V[c][r]} Q${top.c} ${V[c+1][r]} Q${right.c} ${V[c+1][r+1]} Q${bot.c} ${V[c][r+1]} Q${left.c} ${V[c][r]}Z`;
+  const ctr=[(V[c][r][0]+V[c+1][r][0]+V[c][r+1][0]+V[c+1][r+1][0])/4,(V[c][r][1]+V[c+1][r][1]+V[c][r+1][1]+V[c+1][r+1][1])/4];
+  CELLS.push({c,r,id,d,ctr,sides:[
+    {k:`h:${c}:${r}`,e:top,nb:r>0?LAYOUT[r-1][c]:null},{k:`h:${c}:${r+1}`,e:bot,nb:r<3?LAYOUT[r+1][c]:null},
+    {k:`v:${c}:${r}`,e:left,nb:c>0?LAYOUT[r][c-1]:null},{k:`v:${c+1}:${r}`,e:right,nb:c<4?LAYOUT[r][c+1]:null}]});
+}
+const ADJ={}; Object.keys(AREA).forEach(k=>ADJ[k]={});
+CELLS.forEach(cl=>cl.sides.forEach(s=>{ if(s.nb&&s.nb!==cl.id){ ADJ[cl.id][s.nb]={river:RIVERS.has(s.k)}; ADJ[s.nb][cl.id]={river:RIVERS.has(s.k)}; }}));
+const CENTER={}; Object.keys(AREA).forEach(k=>{const cs=CELLS.filter(c=>c.id===k);CENTER[k]=[cs.reduce((s,c)=>s+c.ctr[0],0)/cs.length,cs.reduce((s,c)=>s+c.ctr[1],0)/cs.length];});
+const E=p=>`M${p.a} Q${p.c} ${p.b}`;
+
+/* ---------------- armies ---------------- */
+const PL=[{n:'Aldric',col:'#2f6fd0',al:'G',l:'A'},{n:'Brenna',col:'#9b2335',al:'E',l:'B'}];
+const START=()=>[
+ {id:'a1',own:0,area:'fairwain',units:['HC','MC','HI','MI','LI'],hero:'Sir Corwin',act:false,name:'Knights of Fairwain'},
+ {id:'a2',own:0,area:'chendl',units:['MC','HC','LI','LI','MI'],act:true,name:'Chendl garrison'},
+ {id:'a3',own:0,area:'admund',units:['MI','MI','HC','HC'],act:false,name:'Admundfort guard'},
+ {id:'a4',own:0,area:'crockport',units:['LI','MI','HI'],act:true,name:'Crockport watch'},
+ {id:'b1',own:1,area:'vesve',units:['Orc','Orc','Hob','Gob','Gob'],name:'Vesve warband'},
+ {id:'b2',own:1,area:'dorakaa',units:['Gob','Gob','Gob','Orc','Hob'],name:'Dorakaa host'},
+ {id:'b3',own:1,area:'howling',units:['Gob','Gob','LI'],name:'Hills raiders'},
+ {id:'b4',own:1,area:'molag',units:['Orc','Orc','Hob','Hob','Hob'],name:'Molag legion'}];
+let ARM=START(); let LOG=['<b>Brenna</b> placed heroes. <b>Aldric</b> drew <b>Army does double-time!</b>','<b>Aldric</b>\'s Chendl garrison moved to Chendl and acted.','<b>Aldric</b>\'s Crockport watch acted.'];
+const armyAt=a=>ARM.find(x=>x.area===a);
+const moveOf=a=>Math.min(...a.units.map(u=>U[u].mv));
+
+function reach(army){
+  const mp=moveOf(army); const best={[army.area]:mp}; const out={}; const q=[army.area];
+  while(q.length){ q.sort((a,b)=>best[b]-best[a]); const a=q.shift(); const left=best[a]; if(left<=0)continue;
+    for(const b in ADJ[a]){ const A=AREA[b]; if(A.t==='water'||A.blocked)continue;
+      let cost; if(A.t==='forest'||A.t==='hills') cost=left>=2?2:null; else if(A.t==='mountains') cost=left; else cost=1; if(cost==null)continue;
+      const nl=left-cost; const x=armyAt(b);
+      if(x&&x.own!==army.own){ if(!out[b]||out[b].left<nl) out[b]={from:a,attack:true,left:nl,cost:mp-nl,river:ADJ[a][b].river}; continue; }
+      if(best[b]==null||best[b]<nl){ best[b]=nl; out[b]={from:a,join:!!x,left:nl,cost:mp-nl,river:ADJ[a][b].river}; q.push(b); } } }
+  delete out[army.area]; return out;
+}
+
+/* ---------------- map render ---------------- */
+const svg=$('#map'); let VB={x:0,y:0,w:1000,h:640}; const FIT={x:0,y:0,w:1000,h:640};
+function setVB(){ svg.setAttribute('viewBox',`${VB.x} ${VB.y} ${VB.w} ${VB.h}`); }
+const state={sel:'a1',dest:null,reach:true,terr:true,lab:true};
+function buildMap(){
+  let s=`<defs>
+  <pattern id="p-forest" width="16" height="16" patternUnits="userSpaceOnUse"><g fill="#4d6a35" opacity=".55"><circle cx="4" cy="5" r="3.2"/><circle cx="12" cy="4" r="2.6"/><circle cx="8" cy="12" r="3.4"/><circle cx="15" cy="13" r="2.2"/></g></pattern>
+  <pattern id="p-hills" width="18" height="14" patternUnits="userSpaceOnUse"><path d="M1 11Q6 2 11 11M9 12Q13 6 17 12" fill="none" stroke="#9a7b35" stroke-width="1.4" opacity=".75"/></pattern>
+  <pattern id="p-mount" width="18" height="14" patternUnits="userSpaceOnUse"><path d="M1 13L8 2l7 11M9 13l5-8" fill="none" stroke="#5e4b38" stroke-width="1.5" opacity=".85"/></pattern>
+  <pattern id="p-water" width="26" height="12" patternUnits="userSpaceOnUse"><path d="M0 6Q6.500 0 13 6T26 6" fill="none" stroke="#fff" stroke-width="1" opacity=".28"/></pattern>
+  <pattern id="p-block" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="9" fill="#1a1208" opacity=".35"/></pattern>
+  <filter id="paper"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .22  0 0 0 0 .1  0 0 0 .5 0"/></filter>
+  <radialGradient id="vig" cx="50%" cy="50%" r="75%"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#2a1b06" stop-opacity=".55"/></radialGradient>
+  ${CELLS.map((c,i)=>`<clipPath id="cc${i}"><path d="${c.d}"/></clipPath>`).join('')}
+  </defs>
+  <rect x="-200" y="-200" width="1400" height="1100" fill="#0b1015"/>
+  <rect x="8" y="8" width="984" height="624" rx="6" fill="#d9ccA0"/>`;
+  // fills
+  s+=CELLS.map(c=>`<path d="${c.d}" fill="${TFILL[AREA[c.id].t]}"/>`).join('');
+  s+=`<g id="tx">`+CELLS.map(c=>{const t=AREA[c.id].t; const p=t==='forest'?'p-forest':t==='hills'?'p-hills':t==='mountains'?'p-mount':t==='water'?'p-water':null; return (p?`<path d="${c.d}" fill="url(#${p})"/>`:'')+(AREA[c.id].blocked?`<path d="${c.d}" fill="url(#p-block)"/>`:'');}).join('')+`</g>`;
+  // area borders
+  let ab='',cb='',rv='',co='';
+  CELLS.forEach((c,i)=>c.sides.forEach(sd=>{
+    const diff=sd.nb&&sd.nb!==c.id; if(diff){ if(c.id<sd.nb) ab+=E(sd.e);
+      const wa=AREA[c.id].t==='water',wb=AREA[sd.nb].t==='water'; if(wa!==wb&&c.id<sd.nb) co+=E(sd.e); }
+    if(AREA[c.id].c){ const nc=sd.nb?AREA[sd.nb].c:null; if(nc!==AREA[c.id].c) cb+=`<path clip-path="url(#cc${i})" d="${E(sd.e)}" stroke="${CT[AREA[c.id].c]==='G'?'#5a98ea':'#e0675b'}" stroke-width="8" fill="none" opacity=".95"/>`; }
+    if(RIVERS.has(sd.k)&&((sd.k.startsWith('v')&&c.c>0)||(sd.k.startsWith('h')&&c.r>0))&&sd.nb) { if(!rv.includes(sd.k)) rv+=`<path data-k="${sd.k}" d="${E(sd.e)}"/>`; }
+  }));
+  s+=`<path d="${ab}" fill="none" stroke="#4a3a1e" stroke-opacity=".38" stroke-width="1.1"/><path d="${co}" fill="none" stroke="#3d6a86" stroke-width="2"/>`;
+  s+=cb;
+  s+=`<g fill="none" stroke="#2f6d99" stroke-width="5.500" stroke-linecap="round" opacity=".95">${rv}</g><g fill="none" stroke="#a9d5f0" stroke-width="2" stroke-linecap="round">${rv}</g>`;
+  s+=`<rect x="8" y="8" width="984" height="624" rx="6" filter="url(#paper)" opacity=".5" style="mix-blend-mode:multiply" pointer-events="none"/><rect x="8" y="8" width="984" height="624" rx="6" fill="url(#vig)" pointer-events="none"/>`;
+  s+=`<g id="reachL"></g><g id="pathL"></g><g id="labL"></g><g id="armL"></g><g id="hover"></g>`;
+  s+=CELLS.map(c=>`<path class="hit" data-a="${c.id}" d="${c.d}" fill="transparent" style="cursor:pointer"/>`).join('');
+  s+=`<rect x="8" y="8" width="984" height="624" rx="6" fill="none" stroke="#6a5226" stroke-width="4" pointer-events="none"/>`;
+  svg.innerHTML=s; setVB(); drawLabels(); drawArmies();
+}
+function drawLabels(){
+  let s=''; if(!state.lab){ $('#labL').innerHTML=''; }
+  Object.keys(AREA).forEach(k=>{ const A=AREA[k],[x,y]=CENTER[k]; const w=A.t==='water';
+    if(state.lab) s+=`<text x="${x}" y="${y-(w?0:30)}" text-anchor="middle" font-family="IM Fell English SC,serif" font-size="${A.cap?14.5:12.5}" fill="${w?'#2b5776':'#2b2217'}" ${w?'font-style="italic" letter-spacing="3"':''} stroke="${w?'#9cc1d6':'#e4d8b4'}" stroke-width="3.500" paint-order="stroke" stroke-linejoin="round">${A.n}</text>`;
+    if(A.cap) s+=`<g transform="translate(${x-8},${y-62})" fill="#2b2217" stroke="#e4d8b4" stroke-width=".8" paint-order="stroke"><use href="#i-castle" width="16" height="16"/></g>`;
+    if(A.magic) s+=`<g transform="translate(${x+46},${y-34})"><circle r="8" fill="#ffd35c" stroke="#5a4310" stroke-width="1.4"/><circle r="3.500" fill="none" stroke="#5a4310" stroke-width="1.4"/></g>`;
+    if(A.merc) s+=`<g transform="translate(${x+46},${y-34})"><circle r="8" fill="#ffd35c" stroke="#5a4310" stroke-width="1.4"/><path d="M0 -5V5M-3 -2H3" stroke="#5a4310" stroke-width="1.6" fill="none"/></g>`;
+    if(A.blocked) s+=`<text x="${x}" y="${y+22}" text-anchor="middle" font-size="10.500" font-weight="700" fill="#fff" stroke="#3a2a14" stroke-width="3" paint-order="stroke" letter-spacing=".5">IMPASSABLE IN THIS SCENARIO</text>`;
+  });
+  $('#labL').innerHTML=s;
+}
+function drawArmies(){
+  let s=''; ARM.forEach(a=>{ const [x,y]=CENTER[a.area]; const P=PL[a.own]; const sel=state.sel===a.id; const gone=a.act&&a.own===0;
+    s+=`<g class="tok" data-id="${a.id}" transform="translate(${x},${y+6})" style="cursor:pointer" tabindex="0" role="button" aria-label="${a.name}, ${a.units.length} units${a.act?', activated':''}">
+      ${sel?`<circle r="30" fill="none" stroke="#d6a74b" stroke-width="3" stroke-dasharray="5 4"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="${RM?0:16}s" repeatCount="indefinite"/></circle>`:''}
+      <path d="M0-24L17-17V4Q17 19 0 26Q-17 19-17 4V-17Z" fill="${gone?'#59616b':P.col}" stroke="${sel?'#d6a74b':'#14100a'}" stroke-width="2.200"/>
+      <text y="9" text-anchor="middle" font-weight="700" font-size="22" fill="#fff">${a.units.length}</text>
+      <g transform="translate(-14,-22)" fill="#fff" opacity=".9"><use href="#i-${P.al}" width="9" height="9"/></g>
+      ${a.hero?`<g transform="translate(17,-20)"><circle r="9" fill="#e7c58a" stroke="#14100a" stroke-width="1.5"/><path d="M0-5l1.500 3.500 3.500.3-2.700 2.300.9 3.600L0 2.800-3.200 4.700l.9-3.600-2.700-2.300 3.500-.3z" fill="#7c2c2a"/></g>`:''}
+      ${gone?`<text y="21" text-anchor="middle" font-size="13" font-weight="700" fill="#cfd6dd">&#10003;</text>`:''}
+    </g>`; });
+  $('#armL').innerHTML=s;
+}
+function drawReach(){
+  const L=$('#reachL'), PL2=$('#pathL'); L.innerHTML=''; PL2.innerHTML='';
+  const a=ARM.find(x=>x.id===state.sel); if(!a||a.own!==0||a.act||!state.reach) return;
+  const R=reach(a); let s='';
+  Object.keys(R).forEach(k=>{ const r=R[k]; const cells=CELLS.filter(c=>c.id===k); const [x,y]=CENTER[k]; const atk=r.attack; const chosen=state.dest===k;
+    cells.forEach(c=>{ s+=`<path d="${c.d}" fill="${atk?'rgba(224,103,91,.30)':'rgba(214,167,75,.30)'}" stroke="${atk?'#e0675b':'#d6a74b'}" stroke-width="${chosen?4:2}" stroke-dasharray="${chosen?'':'7 5'}" pointer-events="none"/>`; });
+    const lab=atk?'Attack':(r.join?'Join':(AREA[k].t==='forest'||AREA[k].t==='hills'?'2 moves':(AREA[k].t==='mountains'?'Stops':'1 move')));
+    s+=`<g transform="translate(${x},${y+50})" pointer-events="none"><rect x="-30" y="-10" width="60" height="19" rx="9.500" fill="#14100a" stroke="${atk?'#e0675b':'#d6a74b'}"/><text y="3.500" text-anchor="middle" font-size="11.500" font-weight="700" fill="${atk?'#f0a49b':'#e9c77c'}">${lab}</text></g>`;
+  });
+  L.innerHTML=s;
+  if(state.dest&&R[state.dest]){ let path=[state.dest]; let cur=state.dest; while(R[cur]&&R[cur].from&&R[cur].from!==a.area){cur=R[cur].from;path.unshift(cur);} path.unshift(a.area);
+    const pts=path.map(k=>CENTER[k].map((v,i)=>i?v+6:v)); const d='M'+pts.map(p=>p.join(' ')).join('L');
+    PL2.innerHTML=`<path d="${d}" fill="none" stroke="#14100a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/><path d="${d}" fill="none" stroke="${R[state.dest].attack?'#e0675b':'#e9c77c'}" stroke-width="3.500" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 9"/>`; }
+}
+
+/* why-not popover */
+function whyNot(k,ev){
+  const a=ARM.find(x=>x.id===state.sel); const A=AREA[k]; let t,b,rule='move';
+  if(A.t==='water'){ t='Ships only'; b=`${A.n} is open water. Land troops cannot enter sea or lake areas unless a ship carries them, or a ferry links the shores.`; }
+  else if(A.blocked){ t='Blocked in this scenario'; b='Furyondy Frontier closes the Lortmil Mountains. No unit may cross them, although heroes can still travel to the Sea of Dust.'; rule='scen'; }
+  else if(a&&a.act){ t='This army has acted'; b=`${a.name} is flipped. Each army acts once per turn. It becomes ready again next turn, after healing.`; }
+  else if(a&&a.own!==0){ t='Not your army'; b='Only the player whose turn it is may give orders to an army.'; }
+  else { const R=a?reach(a):{}; t='Out of reach'; b=`${a?a.name:'This army'} moves ${a?moveOf(a):3} areas per turn, set by its slowest unit. Forest and hills cost 2 of those, so ${A.n} is too far this turn.`; }
+  showPop(t,b,ev,rule);
+}
+function showPop(t,b,ev,rule){
+  closePop(); const w=$('#mapwrap'); const r=w.getBoundingClientRect(); const p=document.createElement('div'); p.className='pop'; p.id='pop';
+  p.innerHTML=`<h4>${t}</h4><div>${b}</div><div class="x"><button class="rule" data-rule="move">Show the rule</button><button class="rule" id="popx">Dismiss</button></div>`;
+  let x=ev.clientX-r.left+14,y=ev.clientY-r.top+14; x=Math.min(x,r.width-320); y=Math.min(y,r.height-170); p.style.left=Math.max(8,x)+'px'; p.style.top=Math.max(8,y)+'px'; w.appendChild(p);
+  $('#popx').onclick=closePop;
+}
+function closePop(){ const p=$('#pop'); if(p)p.remove(); }
+
+/* interaction */
+let dragged=false;
+svg.addEventListener('click',e=>{
+  if(dragged){dragged=false;return;}
+  const tok=e.target.closest('.tok'); const hit=e.target.closest('.hit');
+  closePop();
+  if(tok){ state.sel=tok.dataset.id; state.dest=null; refresh(); return; }
+  if(!hit) return; const k=hit.dataset.a; const a=ARM.find(x=>x.id===state.sel);
+  const here=armyAt(k); if(here&&here.own===0&&(!a||!state.reach||!(a&&!a.act&&reach(a)[k]))){ state.sel=here.id; state.dest=null; refresh(); return; }
+  if(a&&a.own===0&&!a.act){ const R=reach(a); if(R[k]){ state.dest=k; refresh(); return; } }
+  whyNot(k,e);
+});
+svg.addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===' ')&&e.target.closest('.tok')){ state.sel=e.target.closest('.tok').dataset.id; state.dest=null; refresh(); e.preventDefault(); } });
+svg.addEventListener('mousemove',e=>{ const h=e.target.closest('.hit'); const g=$('#hover'); if(!h){g.innerHTML='';return;} const k=h.dataset.a; g.innerHTML=CELLS.filter(c=>c.id===k).map(c=>`<path d="${c.d}" fill="rgba(255,255,255,.12)" stroke="#fff" stroke-width="1.500" pointer-events="none"/>`).join(''); });
+svg.addEventListener('mouseleave',()=>{$('#hover').innerHTML='';});
+(function(){ let sx,sy,vx,vy,down=false;
+  svg.addEventListener('pointerdown',e=>{down=true;dragged=false;sx=e.clientX;sy=e.clientY;vx=VB.x;vy=VB.y;});
+  addEventListener('pointermove',e=>{ if(!down)return; const dx=e.clientX-sx,dy=e.clientY-sy; if(Math.abs(dx)+Math.abs(dy)>5){dragged=true;svg.classList.add('drag');}
+    if(dragged){ const k=VB.w/svg.clientWidth; VB.x=vx-dx*k; VB.y=vy-dy*k; setVB(); } });
+  addEventListener('pointerup',()=>{down=false;svg.classList.remove('drag'); setTimeout(()=>{dragged=false;},0);});
+  function zoom(f){ const cx=VB.x+VB.w/2,cy=VB.y+VB.h/2; VB.w*=f;VB.h*=f;VB.x=cx-VB.w/2;VB.y=cy-VB.h/2;setVB(); }
+  $('#zin').onclick=()=>zoom(.8); $('#zout').onclick=()=>zoom(1.25); $('#zfit').onclick=()=>{VB={...FIT};setVB();};
+  svg.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?.9:1.1);},{passive:false});
+})();
+$('#l-reach').onchange=e=>{state.reach=e.target.checked;drawReach();};
+$('#l-terr').onchange=e=>{ $('#tx').style.display=e.target.checked?'':'none'; };
+$('#l-lab').onchange=e=>{state.lab=e.target.checked;drawLabels();};
+$('#undo').onclick=()=>{ ARM=START(); state.sel='a1'; state.dest=null; LOG=LOG.slice(-3); refresh(); };
+
+/* ---------------- coach panel ---------------- */
+function oddsFor(att,def,hero){ const sa=att.units.reduce((s,u,i)=>s+U[u].f+(hero&&u==='HI'?1:0),0), sd=def.units.reduce((s,u)=>s+U[u].f,0); return {a:(sa/10).toFixed(1),d:(sd/10).toFixed(1)}; }
+function refresh(){ drawArmies(); drawReach(); renderCoach(); $('#log').innerHTML=LOG.slice().reverse().map(l=>`<li>${l}</li>`).join(''); }
+function renderCoach(){
+  const mine=ARM.filter(a=>a.own===0); const sel=ARM.find(a=>a.id===state.sel)||mine[0];
+  const done=mine.filter(a=>a.act).length;
+  let h=`<div class="panel"><div class="eyebrow">Phase 4, step A</div><h2>Your army and hero actions</h2>
+   <p class="lead">Each army or hero does everything it wants, then flips. You may act with none, some or all. Nothing forces you to move.</p>
+   <div class="army-rows">`;
+  mine.forEach(a=>{ h+=`<button class="arow ${a.id===sel.id?'on':''} ${a.act?'done':''}" data-sel="${a.id}"><span class="ctr G" style="width:26px;height:26px;border-radius:5px"><b style="font-size:14px">${a.units.length}</b></span><span>${a.name}<br><small style="color:var(--muted)">${AREA[a.area].n}</small></span><span class="s">${a.act?'acted':'ready'}</span></button>`; });
+  h+=`</div><div style="display:flex;gap:8px;align-items:center;margin-top:10px"><span class="chip brass">${done} of ${mine.length} armies acted</span><button class="btn" style="margin-left:auto" disabled title="Wait until you have finished your actions">Done: heal units &rarr;</button></div></div>`;
+
+  // selected
+  const own=sel.own===0; const dest=state.dest; const R=own&&!sel.act?reach(sel):{};
+  h+=`<div class="panel"><div class="eyebrow">${own?'Selected army':'Enemy army, visible to all'}</div><h3 style="font:400 20px var(--display);margin:3px 0 0">${sel.name}</h3>
+    <div style="font-size:13px;color:var(--muted)">${AREA[sel.area].n}${sel.hero?'. Led by hero '+sel.hero:''}</div>
+    <div class="units">${sel.units.map(u=>ctr(u)).join('')}</div>
+    <dl class="facts"><dt>Moves</dt><dd>${moveOf(sel)} areas <span style="color:var(--muted)">(slowest unit: ${sel.units.find(u=>U[u].mv===moveOf(sel))&&U[sel.units.find(u=>U[u].mv===moveOf(sel))].n})</span></dd><dt>Strength</dt><dd>${sel.units.reduce((s,u)=>s+U[u].f,0)} points across ${sel.units.length} counters</dd></dl>`;
+  if(own&&!sel.act){
+    const inf=sel.units.filter(u=>U[u].inf).length;
+    h+=`<div class="acts">
+      <button class="act" disabled><b>Move</b><span>${dest?'':'Pick a highlighted area on the map.'}</span></button>
+      <button class="act" data-do="fortify"><b>Fortify</b><span>${inf} infantry here: ${inf*10}% chance. ${sel.hero?'Corwin adds +1 if he acts too.':''}</span></button>
+      <button class="act" disabled><b>Split off troops</b><span>Pick a destination first. A free army marker is needed.</span></button>
+      <button class="act" data-do="disband"><b>Disband</b><span>Counters return to the pool. Cannot be undone.</span></button></div>`;
+  } else if(own){ h+=`<div class="callout" style="margin:10px 0 0;font-size:13.5px">Flipped, so it is done for this turn. Troops here heal in step B.</div>`; }
+  h+=`</div>`;
+
+  // plan
+  if(dest&&R[dest]){ const r=R[dest]; const x=armyAt(dest);
+    if(r.attack){ const o=oddsFor(sel,x,true);
+      h+=`<div class="plan"><h3>Attack ${AREA[dest].n}</h3><ul>
+        <li>Costs ${r.cost} of ${moveOf(sel)} moves. The army ends there if it wins.</li>
+        ${r.river?'<li><b>River crossing.</b> Brenna\'s units roll first, and you remove your hits first.</li>':''}
+        <li>Expected hits per round: you <b>${o.a}</b>, them <b>${o.d}</b>.</li>
+        <li>Sir Corwin may lead: one more round, +1 to a unit.</li></ul>
+        <div style="display:flex;gap:8px"><button class="btn primary" id="doatk">Declare attack</button><button class="btn" id="cancel">Cancel</button></div></div>`;
+    } else {
+      h+=`<div class="plan"><h3>Move to ${AREA[dest].n}</h3><ul><li>Costs ${r.cost} of ${moveOf(sel)} moves.</li>${r.join?'<li>Joins your army there. The joined army counts as acted, and extra units past 5 are lost.</li>':'<li>The army flips to acted after it moves.</li>'}</ul>
+        <div style="display:flex;gap:8px"><button class="btn primary" id="domove">Confirm move</button><button class="btn" id="cancel">Cancel</button></div></div>`; }
+  }
+
+  // heroes
+  if(sel.hero&&own){ h+=`<div class="panel"><div class="eyebrow">Hero: Sir Corwin</div><div class="acts" style="margin-top:6px">
+      <button class="act" disabled><b>Diplomacy</b><span>Needs the capital of an unallied country. Thornward is 3 areas away.</span></button>
+      <button class="act" disabled><b>Search for treasure</b><span>Needs a magic site. Fairwain has none.</span></button>
+      <button class="act" disabled><b>Recruit mercenaries</b><span>Needs a mercenary site. Crockport has one, 1 area away.</span></button>
+      <button class="act" disabled><b>Move alone</b><span>Up to 6 areas. Disabled while he leads an army that has not moved.</span></button></div></div>`; }
+
+  // rule at hand
+  h+=`<div class="panel"><div class="eyebrow">Rule at hand</div>
+    <div class="quote">${dest&&R[dest]&&R[dest].attack?'Attacking across a river means the defender strikes first. Attackers then remove their own casualties before they roll.':'Infantry and monsters move up to 3 areas, cavalry 4. Forests, hills and deserts cost 2. Mountains and swamps end the move.'}</div>
+    <div style="display:flex;gap:12px;margin-top:8px;font-size:13px"><button class="rule" data-rule="${dest&&R[dest]&&R[dest].attack?'combat':'move'}">Open in rulebook</button><button class="rule" data-rule="move">Turn at a glance</button></div></div>`;
+  $('#coach').innerHTML=h;
+  $$('[data-sel]').forEach(b=>b.onclick=()=>{state.sel=b.dataset.sel;state.dest=null;refresh();});
+  const c=$('#cancel'); if(c)c.onclick=()=>{state.dest=null;refresh();};
+  const m=$('#domove'); if(m)m.onclick=()=>{ const a=ARM.find(x=>x.id===state.sel); const to=state.dest; const x=armyAt(to);
+    if(x){ x.units=x.units.concat(a.units).slice(0,5); ARM=ARM.filter(z=>z!==a); x.act=true; state.sel=x.id; } else { a.area=to; a.act=true; }
+    LOG.push(`<b>Aldric</b>'s ${a.name} moved to <b>${AREA[to].n}</b> and acted.`); state.dest=null; refresh(); };
+  const k=$('#doatk'); if(k)k.onclick=()=>go('battle');
+  $$('[data-do]').forEach(b=>b.onclick=()=>{ if(b.dataset.do==='fortify'){ showPop('Fortify','Roll 1d10 at the end of the declaration. This mockup does not roll.',{clientX:innerWidth/2,clientY:300},'move'); } });
+}
+$('#coach').addEventListener('click',e=>{});
+document.addEventListener('click',e=>{ const r=e.target.closest('[data-rule]'); if(r){ openRule(r.dataset.rule==='scen'?'move':r.dataset.rule); }});
+
+/* hand */
+(function(){
+  const cards=[
+   {k:'Event',cls:'ev',t:'Army does double-time!',x:'A previously activated army may move again, but cannot attack.',p:'Playable now',r:-9},
+   {k:'Treasure',cls:'tr',t:'Wand of Fear',x:'&minus;1 to one enemy unit for the battle.',p:'Battle card',r:0},
+   {k:'Mercenary',cls:'me',t:'2 Elf Cavalry',x:'Alignment: Good. Add at the start of a combat round. Needs 5 or fewer counters after the battle.',p:'Battle card',r:9}];
+  $('#hand').innerHTML=cards.map(c=>`<button class="hcard ${c.cls}" style="--r:${c.r}deg" aria-label="${c.k} card: ${c.t}"><span class="k">${c.k}</span><span class="t">${c.t}</span><span>${c.x}</span><span class="pl8">${c.p}</span></button>`).join('');
+})();
+
+/* ---------------- battle ---------------- */
+const BSTEPS=[
+ ['Lines laid out','Armies stay on the map. Counters stand in two facing lines.'],
+ ['Cards played','Attacker lays cards face down first, then defender. Flip together.'],
+ ['Defenders roll first','River crossing. A d10 equal to or under strength is a hit.'],
+ ['Attackers take their hits','Hurt units flip. Weak units leave. Removed units cannot roll.'],
+ ['Attackers roll','Only survivors roll, with their current strengths.'],
+ ['Defenders take their hits','Hits are applied. Round ends.'],
+ ['Retreat or fight on','Attacker may retreat. Hero allows up to 4 rounds.']];
+let B;
+function bReset(){
+  B={step:2,
+   att:[['HC',0],['MC',1],['HI',2],['LI',3],['MI',4]].map(([k,i])=>({k,hp:2,hero:k==='HI'})),
+   def:['Orc','Orc','Hob','Gob','Gob'].map(k=>({k,hp:2})),
+   dd:[null,null,null,null,null],ad:[null,null,null,null,null],dlog:[]};
+}
+const strOf=u=>{const b=U[u.k];return (u.hp===1&&b.b?b.b:b.f)+(u.hero?1:0);};
+const dead=u=>u.hp===0;
+function drawArena(){
+  const X=i=>100+i*200, YD=130, YA=370, W=112,Hh=132;
+  let s=`<defs><marker id="arr-e" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#e0675b"/></marker><marker id="arr-g" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#5a98ea"/></marker></defs>`;
+  s+=`<text x="500" y="22" text-anchor="middle" font-size="12" fill="#98a3af" letter-spacing="3">DEFENDERS · BRENNA · IUZ</text><text x="500" y="492" text-anchor="middle" font-size="12" fill="#98a3af" letter-spacing="3">ATTACKERS · ALDRIC · FURYONDY</text>`;
+  s+=`<line x1="40" x2="960" y1="250" y2="250" stroke="#3d6a86" stroke-width="10" opacity=".55" stroke-linecap="round"/><text x="960" y="268" text-anchor="end" font-size="11" fill="#9cc1d6" font-style="italic">Veng River</text>`;
+  // arrows
+  const dTar=[0,1,2,3,4], aTar={0:2,1:1,2:0,4:3};
+  if(B.step>=3&&B.step<4||B.step>=4){ B.def.forEach((u,i)=>{ if(B.dd[i]!=null){ const t=dTar[i]; const hit=B.dd[i].hit; s+=`<line x1="${X(i)}" y1="${YD+Hh/2+2}" x2="${X(t)}" y2="${YA-Hh/2-4}" stroke="#e0675b" stroke-width="${hit?4:1.5}" stroke-dasharray="${hit?'':'5 5'}" opacity="${hit?1:.45}" marker-end="url(#arr-e)"/>`; }}); }
+  if(B.step>=5){ B.att.forEach((u,i)=>{ if(B.ad[i]!=null){ const t=aTar[i]; const hit=B.ad[i].hit; s+=`<line x1="${X(i)+14}" y1="${YA-Hh/2-2}" x2="${X(t)+14}" y2="${YD+Hh/2+4}" stroke="#5a98ea" stroke-width="${hit?4:1.5}" stroke-dasharray="${hit?'':'5 5'}" opacity="${hit?1:.45}" marker-end="url(#arr-g)"/>`; }}); }
+  const card=(u,x,y,al,die)=>{ const g=dead(u); const bg=al==='G'?'#2f5d49':'#7c2c2a'; const base=U[u.k]; const two=base.b>0;
+    return `<g class="${g?'gone':''}" transform="translate(${x-W/2},${y-Hh/2})"><rect width="${W}" height="${Hh}" rx="10" fill="${bg}" stroke="${u.hero?'#e7c58a':'rgba(255,255,255,.35)'}" stroke-width="${u.hero?3:2}"/>
+     <rect width="${W}" height="27" rx="10" fill="rgba(0,0,0,.3)"/><text x="${W/2}" y="18.500" text-anchor="middle" class="bn">${base.n.toUpperCase()}</text>
+     <text x="${W/2}" y="84" text-anchor="middle" class="bs">${g?'&times;':strOf(u)}</text>
+     <g transform="translate(${W/2},108)">${two?`<circle cx="-12" r="6" fill="${u.hp>=2?'#fff':'none'}" stroke="#fff" stroke-width="1.600"/><circle cx="12" r="6" fill="${u.hp>=1?'#fff':'none'}" stroke="#fff" stroke-width="1.600"/>`:`<circle r="6" fill="${u.hp>=1?'#fff':'none'}" stroke="#fff" stroke-width="1.600"/>`}</g>
+     <text x="${W/2}" y="${Hh-5}" text-anchor="middle" font-size="10.500" fill="rgba(255,255,255,.75)">${g?'removed':(u.hp===1&&two?'hurt: back side':(two?'2 hits to remove':'1 hit removes'))}</text>
+     ${u.hero?`<g transform="translate(${W-2},2)"><circle r="14" fill="#e7c58a" stroke="#14100a" stroke-width="2"/><text y="5" text-anchor="middle" font-size="14" fill="#7c2c2a" font-weight="700">+1</text></g>`:''}</g>`; };
+  const dice=(d,x,y)=>{ if(!d) return ''; const c=d.hit?'#6fbf8a':'#6b7580'; return `<g transform="translate(${x},${y})"><rect x="-38" y="-19" width="76" height="38" rx="9" fill="#10161d" stroke="${c}" stroke-width="2.500"/><text x="-12" y="7" text-anchor="middle" font-size="22" font-weight="700" fill="#fff">${d.v}</text><text x="18" y="6" text-anchor="middle" font-size="12" font-weight="700" fill="${c}">${d.hit?'HIT':'miss'}</text></g>`; };
+  B.def.forEach((u,i)=>{ s+=card(u,X(i),YD,'E'); s+=dice(B.dd[i],X(i),YD-Hh/2-26); });
+  B.att.forEach((u,i)=>{ s+=card(u,X(i),YA,'G'); s+=dice(B.ad[i],X(i),YA+Hh/2+26); });
+  $('#arena').innerHTML=s;
+}
+function drawSteps(){
+  $('#bsteps').innerHTML=BSTEPS.map((x,i)=>`<li class="${i<B.step?'done':i===B.step?'cur':''}"><div>${x[0]}<small>${x[1]}</small></div></li>`).join('');
+  $('#dlog').innerHTML=B.dlog.map(l=>`<li class="${l.c}">${l.t}</li>`).join('')||'<li>Nothing rolled yet.</li>';
+}
+const MSG=[ '','',
+ 'Brenna\'s five units each attack one of yours. Roll for all of them at once.',
+ 'Brenna scored 3 hits. Apply them: units with a back side flip, one-hit units leave.',
+ 'Four units survive. Roll for them with their current strengths.',
+ 'Aldric scored 3 hits. Apply them to finish the round.',
+ 'Round 1 is over. Aldric has 4 units left, Brenna has 4. You may fight again or retreat to Fairwain.'];
+const BGO=['','','Roll defenders\' dice','Apply hits to attackers','Roll attackers\' dice','Apply hits to defenders','Fight round 2'];
+function bDraw(){ drawArena(); drawSteps(); $('#bmsg').textContent=MSG[B.step]||''; const g=$('#bgo'); g.textContent=BGO[B.step]; $('#bretreat').hidden=B.step!==6; $('#rnd').textContent='1'; }
+function animateRoll(rows,cb){
+  const f=()=>{ rows.forEach(r=>{ r.arr[r.i]={v:1+Math.floor(Math.random()*10),hit:false}; }); drawArena(); };
+  if(RM){ cb(); return; } let n=0; $('#bgo').disabled=true; const t=setInterval(()=>{ f(); if(++n>9){clearInterval(t); cb(); $('#bgo').disabled=false;} },60);
+}
+$('#bgo').onclick=()=>{
+  if(B.step===2){ const v=[3,7,5,1,9]; animateRoll(B.def.map((u,i)=>({arr:B.dd,i})),()=>{ B.def.forEach((u,i)=>{ B.dd[i]={v:v[i],hit:v[i]<=strOf(u)}; });
+      B.dlog.push({c:'hit',t:'Defenders: Orc 3 &le; 4 hit, Orc 7 &gt; 4 miss, Hobgoblin 5 &le; 5 hit, Goblin 1 &le; 2 hit, Goblin 9 &gt; 2 miss. <b>3 hits.</b>'}); B.step=3; bDraw(); }); }
+  else if(B.step===3){ [0,2,3].forEach(i=>{ const u=B.att[i]; u.hp=(u.hp===2&&U[u.k].b)?1:0; }); B.dlog.push({c:'hit',t:'Heavy Cavalry and Heavy Infantry flip to their back sides. Light Infantry has no back side and leaves.'}); B.step=4; bDraw(); }
+  else if(B.step===4){ const v=[2,3,6,null,4]; B.dd=[null,null,null,null,null]; const live=B.att.map((u,i)=>dead(u)?null:i).filter(i=>i!=null);
+    animateRoll(live.map(i=>({arr:B.ad,i})),()=>{ B.att.forEach((u,i)=>{ B.ad[i]=dead(u)?null:{v:v[i],hit:v[i]<=strOf(u)}; });
+      B.dlog.push({c:'hitg',t:'Attackers: Cavalry 2 &le; 3 hit, Medium Cavalry 3 &le; 3 hit, Heavy Infantry 6 &gt; 5 miss, Medium Infantry 4 &le; 4 hit. <b>3 hits.</b>'}); B.step=5; bDraw(); }); }
+  else if(B.step===5){ const h=B.def; h[2].hp=1; h[1].hp=1; h[3].hp=0; B.dlog.push({c:'hitg',t:'Hobgoblin and Orc flip. One Goblin leaves. Round 1 ends.'}); B.step=6; bDraw(); }
+  else if(B.step===6){ bReset(); bDraw(); }
+};
+$('#bretreat').onclick=()=>{ B.dlog.push({c:'',t:'Aldric retreats to Fairwain. Defenders keep Vesve Forest.'}); $('#bmsg').textContent='Retreated. Surviving attackers return to Fairwain, still counted as acted.'; $('#bretreat').hidden=true; $('#bgo').textContent='Replay the round'; B.step=6; drawSteps(); };
+bReset(); bDraw();
+
+/* ---------------- diplomacy ---------------- */
+const D={gifts:{'Sword of Kas':false,'Rod of Rulership':false},hero:false,against:true};
+function dRender(){
+  const base=5,mod=1; let t=base+mod+Object.values(D.gifts).filter(Boolean).length+(D.hero?1:0)-(D.against?1:0); const tt=Math.max(0,Math.min(10,t));
+  $('#dsum').innerHTML=`
+   <div class="ln"><div>Bissel's Good rating<small>You are a Good player. Evil players use the right-hand number, 3.</small></div><div class="v">${base}</div></div>
+   <div class="ln"><div>Furyondy is under your control<small>Printed on the card as the diplomacy modifier.</small></div><div class="v p">+1</div></div>
+   ${Object.keys(D.gifts).map((g,i)=>`<div class="ln"><label class="tog" for="gift${i}"><input type="checkbox" id="gift${i}" data-g="${g}" ${D.gifts[g]?'checked':''}><div>Gift the Treasure card <b>${g}</b><small>Each gift is discarded and adds +1.</small></div></label><div class="v ${D.gifts[g]?'p':''}">${D.gifts[g]?'+1':'0'}</div></div>`).join('')}
+   <div class="ln"><label class="tog" for="cdf"><input type="checkbox" id="cdf" ${D.hero?'checked':''}><div>A friendly hero in Thornward declares for you<small>Counter-diplomacy. That hero flips. Optional rule.</small></div></label><div class="v ${D.hero?'p':''}">${D.hero?'+1':'0'}</div></div>
+   <div class="ln"><label class="tog" for="cda"><input type="checkbox" id="cda" ${D.against?'checked':''}><div>Brenna's hero in Thornward declares against you<small>She spends her hero's action to do it.</small></div></label><div class="v ${D.against?'n':''}">${D.against?'&minus;1':'0'}</div></div>
+   <div class="ln tot"><div><b>Roll this or lower</b><small>d10, where 0 counts as 10</small></div><div class="v">${tt}</div></div>`;
+  $('#line10').innerHTML=Array.from({length:10},(_,i)=>`<div class="${i+1<=tt?'yes':''}">${i+1}</div>`).join('');
+  $('#dchance').textContent=`${tt*10}% chance`;
+  $$('#dsum [data-g]').forEach(c=>c.onchange=()=>{D.gifts[c.dataset.g]=c.checked;dRender();});
+  $('#cdf').onchange=e=>{D.hero=e.target.checked;dRender();}; $('#cda').onchange=e=>{D.against=e.target.checked;dRender();};
+  const r=$('#dres'); r.className='result'; r.textContent='Roll equal to or under the target to win the alliance.';
+  D.tt=tt;
+}
+$('#droll').onclick=()=>{ const tt=D.tt; const fin=()=>{ const v=1+Math.floor(Math.random()*10); $$('#line10 div').forEach((d,i)=>d.classList.toggle('hit',i+1===v));
+   const r=$('#dres'); if(v<=tt){ r.className='result win'; r.innerHTML=`<b>You rolled ${v}. Bissel joins your side.</b><br>At the end of your turn (step D) its army is placed in Bissel: 1 Medium Cavalry, 1 Medium Infantry, 1 Light Infantry, 1 Scout. Sir Corwin flips to acted.`; }
+   else { r.className='result lose'; r.innerHTML=`<b>You rolled ${v}. The Margrave refuses.</b><br>Sir Corwin still flips to acted. Bissel stays unaligned, so anyone may try again.`; } $('#droll').disabled=false; };
+  $('#droll').disabled=true; if(RM){fin();return;} let n=0; const t=setInterval(()=>{ const v=1+Math.floor(Math.random()*10); $$('#line10 div').forEach((d,i)=>d.classList.toggle('hit',i+1===v)); if(++n>9){clearInterval(t);fin();} },60); };
+dRender();
+
+/* ---------------- rulebook ---------------- */
+const TOC=[
+ ['Basics',[['Cards and counters','p.1-2'],['Set-up','p.2'],['Turn sequence','p.3']]],
+ ['Army actions',[['move','Army movement','p.3-4'],['Fleet movement','p.4'],['combat','Combat','p.4-6'],['Fortify','p.6'],['Disband','p.6']]],
+ ['Hero actions',[['diplomacy','Diplomacy','p.6-7'],['Search for treasure','p.7'],['Recruit mercenaries','p.7']]],
+ ['Final actions',[['Healing units','p.7'],['Adding units','p.7'],['Raising armies','p.7-8']]],
+ ['Special rules',[['Control of countries','p.8'],['Victory','p.8']]]];
+const PAGES={
+ move:{t:'Army movement',pg:'Rulebook p.3-4',lead:'An army walks from area to area during your Action Phase. How far depends on its slowest unit and on the ground it crosses.',
+  sum:`<div class="speed"><div><b>3</b><span>Infantry and monsters</span></div><div><b>4</b><span>Cavalry</span></div><div><b>6</b><span>Fleets, by sea</span></div></div>
+   <div class="prose"><ul><li>An army moves at the speed of its <b>slowest unit</b>. One infantry in a cavalry army makes the whole army a 3-mover.</li>
+   <li><b>Forest, hills and desert</b> cost 2 of your moves. With only 1 left, you cannot enter.</li>
+   <li><b>Mountains and swamps</b> end the army's move there. Next turn it moves normally, though another mountain or swamp stops it again.</li>
+   <li><b>Mountain spines</b>, the black ridges, cannot be crossed by armies.</li>
+   <li>You cannot skip over an area, and cannot pass through another player's army without their permission. Entering it means attacking.</li></ul></div>`,
+  ex:`<div class="prose"><h3>Worked example</h3><p>Aldric's Knights of Fairwain (infantry and cavalry) have 3 moves. Vesve Forest costs 2, so they arrive with 1 left. They could still enter a clear area next, but not a second forest.</p><p>The same knights could not reach Dorakaa this turn: Howling Hills costs 2, leaving 1, and Dorakaa is also held by an enemy army, which turns the move into an attack.</p></div>`,
+  edge:`<div class="prose"><ul><li><b>Combining.</b> You may end a move in an area holding your own army. They merge, count as acted, and anything past 5 counters is lost.</li><li><b>Splitting.</b> You may drop troops off on the way if you have a free army marker. The troops left behind stay ready.</li><li><b>Heroes.</b> Another player's hero never blocks your movement.</li><li><b>Two armies.</b> No two armies may end the turn in the same area, whoever owns them.</li></ul></div>`,
+  rel:[['Combat','combat'],['Diplomacy','diplomacy']],
+  gl:[['Area','One movement space, bordered by black lines.'],['Army','A stack of 1 to 5 counters under one marker.'],['Activated','Flipped: the army or hero has done its actions this turn.']],
+  faq:[['Can I move through my ally?','Yes, if the ally lets you. Their army stays put.'],['What if I enter an empty enemy country?','You occupy it. It counts as friendly while your army stays.']]},
+ combat:{t:'Combat',pg:'Rulebook p.4-6',lead:'Battles are fought in rounds. Each round, every counter gets one die and tries to hit an opposing counter.',
+  sum:`<div class="speed"><div><b>3</b><span>Rounds normally</span></div><div><b>4</b><span>With a hero</span></div><div><b>d10</b><span>Hit on roll &le; strength</span></div></div>
+   <div class="prose"><ul><li>Attacker walks into the defender's area. Counters stand in <b>two facing lines</b>.</li><li>Both sides may play cards, attacker first.</li><li>The attacker assigns each of his counters to an enemy. Every enemy must be attacked once if possible.</li><li>Hits are not applied until both sides have rolled, unless a <b>river</b> is crossed.</li><li>Units with a back side flip on the first hit and leave on the second. Others leave on the first.</li><li>After each round the attacker may retreat. After the last round, surviving attackers retreat if defenders remain.</li></ul></div>
+   <div class="callout">Try it: open the <button class="rule" data-go="battle">Battle screen</button> and step through round 1.</div>`,
+  ex:`<div class="prose"><h3>Modifiers stack</h3><p>A river crossing, a fortification and a favored terrain can all apply at once. A unit's strength is never lowered below 1.</p></div>`,
+  edge:`<div class="prose"><ul><li><b>Scouts</b> shoot first, and their victims leave before the rest of the round.</li><li><b>Heroes</b> cannot be hurt. If all troops die, the battle ends and the hero stays.</li><li><b>Marines</b> can attack ships from land.</li></ul></div>`,
+  rel:[['Army movement','move'],['Diplomacy','diplomacy']], gl:[['Battle line','A row of counters taken off the map for the fight.'],['Round','One roll for every counter.']], faq:[['Can I add units mid-battle?','Mercenaries, at the start of any round. They may lift you past 5, but trim back afterward.']]},
+ diplomacy:{t:'Diplomacy',pg:'Rulebook p.6-7',lead:'A hero standing in the capital of an unaligned country can talk it into your alliance.',
+  sum:`<div class="prose"><ul><li>Find the country card. Use the rating for your alignment, then add or subtract its printed modifier.</li><li>Roll a d10. Equal to or under the target wins the country.</li><li>Each Treasure card you discard as a gift adds +1.</li><li>The new ally's army appears at the end of your turn, step D.</li></ul></div>
+   <div class="callout">Try it: the <button class="rule" data-go="diplomacy">Diplomacy screen</button> shows every number on the way to the roll.</div>`,
+  ex:`<div class="prose"><p>Furyondy-controlled Aldric needs 5 + 1 = 6 or less for Bissel. Two gifts make it 8.</p></div>`,
+  edge:`<div class="prose"><ul><li>A hero in another player's army area cannot try diplomacy.</li><li>Counter-diplomacy is an optional rule: heroes in the same area vote +1 or &minus;1.</li></ul></div>`,
+  rel:[['Army movement','move'],['Combat','combat']], gl:[['Capital','The marked castle area of a country.']], faq:[['Can I try twice in a turn?','Not with the same hero. A hero flips after one action.']]}
+};
+let RP={id:'move',tab:'sum'};
+function rbRender(){
+  $('#toc').innerHTML=TOC.map(g=>`<div><h4>${g[0]}</h4>${g[1].map(x=>x.length===3?`<button data-r="${x[0]}" class="${RP.id===x[0]?'on':''}"><span>${x[1]}</span><small>${x[2]}</small></button>`:`<button disabled title="Not drawn in this mockup"><span>${x[0]}</span><small>${x[1]}</small></button>`).join('')}</div>`).join('');
+  $$('#toc [data-r]').forEach(b=>b.onclick=()=>{RP.id=b.dataset.r;RP.tab='sum';rbRender();});
+  const p=PAGES[RP.id];
+  $('#rpage').innerHTML=`<div class="crumb">Rulebook &rsaquo; ${p.t} &middot; ${p.pg.replace('Rulebook ','')}</div><h1>${p.t}</h1><p class="prose" style="font-size:18px;color:#d6cfba;max-width:60ch">${p.lead}</p>
+    <div class="ptabs" role="tablist">${[['sum','Summary'],['ex','Examples'],['edge','Edge cases']].map(t=>`<button role="tab" data-t="${t[0]}" class="${RP.tab===t[0]?'on':''}">${t[1]}</button>`).join('')}</div>
+    ${p[RP.tab]}${RP.id==='move'&&RP.tab==='sum'?SANDBOX:''}`;
+  $$('#rpage [data-t]').forEach(b=>b.onclick=()=>{RP.tab=b.dataset.t;rbRender();});
+  $$('#rpage [data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+  $('#rside').innerHTML=`<div><div class="eyebrow">In this game</div><div class="callout" style="margin:8px 0 0;font-size:13.5px">The turn coach and the map's "Show the rule" links bring you to the exact paragraph. This page opens at the rule that matters for your current step.</div></div>
+    <div><div class="eyebrow">Related rules</div><div class="rel">${p.rel.map(r=>`<button data-r2="${r[1]}">${r[0]} &rarr;</button>`).join('')}</div></div>
+    <div><div class="eyebrow">Terms</div><dl>${p.gl.map(g=>`<dt>${g[0]}</dt><dd>${g[1]}</dd>`).join('')}</dl></div>
+    <div class="faq"><div class="eyebrow">Common questions</div>${p.faq.map(f=>`<details><summary>${f[0]}</summary><p>${f[1]}</p></details>`).join('')}</div>`;
+  $$('#rside [data-r2]').forEach(b=>b.onclick=()=>{RP.id=b.dataset.r2;RP.tab='sum';rbRender();});
+  if(RP.id==='move'&&RP.tab==='sum') sbInit();
+}
+const SANDBOX=`<div class="sandbox"><div class="eyebrow">Try it: how far can this army go?</div>
+ <div class="ctl"><span style="font-size:14px">Slowest unit:</span><button class="btn" id="sb-inf" aria-pressed="true">Infantry (3)</button><button class="btn" id="sb-cav">Cavalry (4)</button><span style="font-size:13px;color:var(--muted)">Pips show moves left on arrival.</span></div>
+ <div class="chain" id="chain"></div></div>`;
+const CHAIN=[['Start','clear'],['Meadow','clear'],['Greenwood','forest'],['Meadow','clear'],['Stonewold','hills'],['Mirefen','swamp'],['Meadow','clear']];
+const CF={clear:'#dcd2a6',forest:'#b3c18a',hills:'#dfc482',swamp:'#9fbfae'};
+let sbMove=3;
+function sbInit(){
+  const draw=()=>{ let left=sbMove, stop=false; const rows=CHAIN.map((c,i)=>{ if(i===0) return {ok:true,left,note:'start'}; if(stop) return {ok:false}; const t=c[1]; let cost=t==='forest'||t==='hills'?2:t==='swamp'?left:1; if((t==='forest'||t==='hills')&&left<2) {stop=true;return {ok:false,why:'needs 2'};} if(left<1){stop=true;return {ok:false};} left-=cost; if(t==='swamp'){stop=true;return {ok:true,left:0,note:'stops here'};} return {ok:true,left,note:t==='clear'?'1 move':'2 moves'}; });
+    $('#chain').innerHTML=CHAIN.map((c,i)=>`<div class="tile ${rows[i].ok?'ok':''}" style="background:${CF[c[1]]}"><b>${c[0]}</b><small>${c[1]}</small><div class="pips">${rows[i].ok?Array.from({length:sbMove},(_,j)=>`<i class="${j<rows[i].left?'':'o'}"></i>`).join(''):''}</div><small>${rows[i].ok?rows[i].note:(rows[i].why||'out of reach')}</small></div>`).join(''); };
+  $('#sb-inf').onclick=()=>{sbMove=3;draw();}; $('#sb-cav').onclick=()=>{sbMove=4;draw();}; draw();
+}
+function openRule(id){ if(!PAGES[id]) id='move'; RP.id=id;RP.tab='sum'; rbRender(); go('rulebook'); }
+$('#rsearch').addEventListener('input',e=>{ const q=e.target.value.trim().toLowerCase(); if(!q)return; const hit=Object.keys(PAGES).find(k=>(PAGES[k].t+PAGES[k].lead).toLowerCase().includes(q)); if(hit){RP.id=hit;RP.tab='sum';rbRender();} });
+rbRender();
+
+/* ---------------- handoff ---------------- */
+(function(){
+  const cards=[{k:'Event',cls:'ev',t:'Trolls raid from the Troll Fens!',x:'You must add 1 troll to an Evil army of your choice.',p:'Played right away'},
+   {k:'Treasure',cls:'tr',t:'Rod of Negation',x:'Cancel 1 Treasure card the enemy plays in a battle.',p:'Battle card'}];
+  $('#hrev').innerHTML=cards.map(c=>`<div class="hcard ${c.cls}"><span class="k">${c.k}</span><span class="t">${c.t}</span><span>${c.x}</span><span class="pl8">${c.p}</span></div>`).join('');
+  const show=()=>{ $('#hrev').hidden=false; $('#hhide').hidden=false; $('#hcurtain').hidden=true; };
+  const hide=()=>{ $('#hrev').hidden=true; $('#hhide').hidden=true; $('#hcurtain').hidden=false; };
+  $('#hshow').onclick=show; $('#hhide').onclick=hide;
+  addEventListener('blur',()=>{ if($('#o-blur').checked) hide(); });
+  addEventListener('hashchange',hide);
+})();
+
+buildMap(); refresh();
+})();
+</script>
+</body>
+</html>
